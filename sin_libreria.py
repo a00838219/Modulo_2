@@ -53,6 +53,24 @@ def predict(X, W, b, threshold=0.5):
     return (y_prob >= threshold).astype(int)
 
 # ------------------ Entrenamiento ------------------
+def split_train_test(X, y, test_size=0.2, random_state=42):
+    """
+    Divide X e y en train y test de forma manual.
+    """
+    np.random.seed(random_state)
+    m = X.shape[0]                 # número total de muestras
+    indices = np.arange(m)
+    np.random.shuffle(indices)      # mezcla aleatoria de índices
+    
+    test_count = int(m * test_size) # cantidad para test
+    
+    test_idx = indices[:test_count]
+    train_idx = indices[test_count:]
+    
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+    
+    return X_train, X_test, y_train, y_test
 
 def logistic_regression(X, y, lr=0.01, epochs=1000, verbose=True):
     """
@@ -111,38 +129,53 @@ def classification_metrics(cm):
 X_raw = df[data.feature_names].values.astype(float)
 y = df[['Label']].values.astype(float)  # (m,1)
 
+#Separar en train y test
+X_train_raw, X_test_raw, y_train, y_test = split_train_test(X_raw, y, test_size=0.2, random_state=42)
+
+print(f"Tamaño Train: {X_train_raw.shape[0]} muestras")
+print(f"Tamaño Test : {X_test_raw.shape[0]} muestras")
+
 # Estandariza
-mu = X_raw.mean(axis=0, keepdims=True)
-sd = X_raw.std(axis=0, keepdims=True) + 1e-12
-X = (X_raw - mu) / sd
+mu = X_train_raw.mean(axis=0, keepdims=True)
+sd = X_train_raw.std(axis=0, keepdims=True) + 1e-12
 
-# Entrenar
-W, b, losses = logistic_regression(X, y, lr=0.1, epochs=1000, verbose=True)
+X_train = (X_train_raw - mu) / sd
+X_test  = (X_test_raw - mu) / sd 
 
-# Predicciones
-y_pred = predict(X, W, b)
+# Entrenar (usa y_train)
+W, b, losses = logistic_regression(X_train, y_train, lr=0.1, epochs=1000, verbose=True)
 
-# Precisión
-accuracy = np.mean(y_pred == y)
+# Predicciones SOLO en test
+y_pred = predict(X_test, W, b)
+
+# Precisión en test
+accuracy = np.mean(y_pred == y_test)
 print("\nPesos finales:\n", W)
 print("Bias final:", b)
-print("Precisión del modelo:", accuracy)
+print("Precisión del modelo (TEST):", accuracy)
 
-# Resultados
-df['Predicciones'] = y_pred
-print("\nPredicciones finales:\n", df)
+# --------- Guardar predicciones en df SOLO en filas de test (sin romper tamaños) ---------
+# Reproducir los índices de test con el mismo random_state y tamaño:
+m = X_raw.shape[0]
+np.random.seed(42)
+indices = np.arange(m); np.random.shuffle(indices)
+test_count = int(m * 0.2)
+test_idx = indices[:test_count]
 
-# --------------- Matriz de Confusion ------------------
+df['Predicciones'] = np.nan
+df.loc[test_idx, 'Predicciones'] = y_pred.ravel().astype(int)
 
-# Calcular matriz y métricas
-cm = confusion_matrix(y, y_pred)
+print("\nPredicciones (muestra):\n", df[['Label','Predicciones']].dropna().head())
+
+# --------------- Matriz de Confusion (TEST) ------------------
+cm = confusion_matrix(y_test, y_pred)
 accuracy, precision, recall, f1 = classification_metrics(cm)
 
-ig, ax = plt.subplots(figsize=(5,4))
+fig, ax = plt.subplots(figsize=(5,4))
 im = ax.imshow(cm, cmap='Blues')
 
 # Títulos
-ax.set_title("Matriz de Confusión - Breast Cancer")
+ax.set_title("Matriz de Confusión - Breast Cancer (TEST)")
 ax.set_xlabel("Predicciones")
 ax.set_ylabel("Valores Reales")
 
@@ -163,14 +196,13 @@ plt.show()
 
 # -------------- Metricas -----------------
 
-print("\n=== MÉTRICAS DEL MODELO ===")
+print("\n=== MÉTRICAS DEL MODELO (TEST) ===")
 print(f"Accuracy (Exactitud): {accuracy:.3f}")
 print(f"Precision (Precisión): {precision:.3f}")
 print(f"Recall (Sensibilidad): {recall:.3f}")
 print(f"F1-score: {f1:.3f}")
 
-print("\n=== Matriz de Confusión ===")
+print("\n=== Matriz de Confusión (TEST) ===")
 print(pd.DataFrame(cm,
                    index=['Real: Benigno (0)','Real: Maligno (1)'],
                    columns=['Pred: Benigno (0)','Pred: Maligno (1)']))
-
