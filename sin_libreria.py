@@ -8,7 +8,7 @@ df = pd.DataFrame(data.data, columns=data.feature_names)
 df['Label'] = data.target
 print(df.head())
 
-
+#cambio
 # ------------------ Funciones base ------------------
 
 def sigmoid(z):
