@@ -173,3 +173,4 @@ print("\n=== Matriz de Confusión ===")
 print(pd.DataFrame(cm,
                    index=['Real: Benigno (0)','Real: Maligno (1)'],
                    columns=['Pred: Benigno (0)','Pred: Maligno (1)']))
+
