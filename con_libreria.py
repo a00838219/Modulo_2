@@ -18,14 +18,18 @@ def main():
     print(df.head())
     X = df[data.feature_names].values
     y = df['Label'].values
+    print(f"Tamaño Total : {X.shape[0]} muestras") 
+    print(df.shape)
 
 
     # =======================
     # 2) Train/Test split
     # =======================
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
+        X, y, test_size=0.2, stratify=y, random_state=10
     )
+    print(f"Tamaño Train: {X_train.shape[0]} muestras")
+    print(f"Tamaño Test : {X_test.shape[0]} muestras")  
 
     # =======================
     # 3) Pipeline (Scaler + LogReg)

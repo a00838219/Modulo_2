@@ -52,7 +52,7 @@ def predict(X, W, b, threshold=0.5):
     return (y_prob >= threshold).astype(int)
 
 # ------------------ Entrenamiento ------------------
-def split_train_test(X, y, test_size=0.2, random_state=42):
+def split_train_test(X, y, test_size=0.2, random_state=1):
     """
     Divide X e y en train y test de forma manual.
     """
@@ -156,7 +156,7 @@ print("Precisión del modelo (TEST):", accuracy)
 # --------- Guardar predicciones en df SOLO en filas de test (sin romper tamaños) ---------
 # Reproducir los índices de test con el mismo random_state y tamaño:
 m = X_raw.shape[0]
-np.random.seed(42)
+np.random.seed(1)
 indices = np.arange(m); np.random.shuffle(indices)
 test_count = int(m * 0.2)
 test_idx = indices[:test_count]
